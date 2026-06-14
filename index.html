@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#020617">
+  <title>World Cup 2026 Broadcast Command Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ["Inter", "system-ui", "sans-serif"] },
+          boxShadow: { panel: "0 22px 70px rgba(0,0,0,.3)" }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0,0" rel="stylesheet">
+  <style>
+    :root { color-scheme: dark; }
+    html { scroll-behavior: smooth; }
+    body {
+      background:
+        radial-gradient(circle at 50% -15%, rgba(16, 185, 129, .12), transparent 34rem),
+        radial-gradient(circle at 100% 0%, rgba(59, 130, 246, .07), transparent 28rem),
+        #020617;
+    }
+    .material-symbols-rounded { font-size: 1.25rem; line-height: 1; }
+    .panel { background: rgba(15, 23, 42, .78); border: 1px solid rgba(100, 116, 139, .26); }
+    .match-row:last-child { border-bottom: 0; }
+    .live-row { box-shadow: inset 3px 0 0 #4ade80; }
+    .filter-button[aria-pressed="true"] {
+      color: white;
+      border-color: rgba(74, 222, 128, .72);
+      background: rgba(6, 78, 59, .46);
+      box-shadow: inset 0 0 0 1px rgba(74, 222, 128, .12);
+    }
+    .filter-button[aria-pressed="true"] .filter-icon { color: #4ade80; }
+    .scrollbar-none::-webkit-scrollbar { display: none; }
+    .scrollbar-none { scrollbar-width: none; }
+    @keyframes pulse-dot { 50% { opacity: .35; transform: scale(.8); } }
+    .pulse-dot { animation: pulse-dot 1.5s ease-in-out infinite; }
+  </style>
+</head>
+<body class="min-h-screen overflow-x-hidden font-sans text-slate-100 antialiased selection:bg-emerald-400 selection:text-slate-950">
+  <header class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl">
+    <div class="mx-auto flex max-w-[1600px] flex-col gap-5 px-4 py-6 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+      <div class="flex items-center gap-4">
+        <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-emerald-400/40 bg-emerald-400/10 text-emerald-300">
+          <span class="material-symbols-rounded !text-[28px]">sports_soccer</span>
+        </div>
+        <div>
+          <p class="text-[11px] font-bold uppercase tracking-[.22em] text-emerald-400">Broadcast Command Center</p>
+          <h1 class="mt-1 text-xl font-extrabold tracking-tight text-white sm:text-2xl">FIFA World Cup 2026</h1>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
+        <div>
+          <p class="text-[10px] font-bold uppercase tracking-[.18em] text-slate-500">Eastern Time</p>
+          <p id="clock" class="mt-1 font-semibold tabular-nums text-white">--:--:--</p>
+        </div>
+        <div class="h-9 w-px bg-slate-800"></div>
+        <div>
+          <p class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.18em] text-emerald-400">
+            <span class="pulse-dot h-2 w-2 rounded-full bg-emerald-400"></span>
+            Live data
+          </p>
+          <button id="refresh-button" class="mt-1 inline-flex items-center gap-1.5 font-semibold text-slate-300 transition hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/70">
+            <span id="refresh-label">Refresh feed</span>
+            <span class="material-symbols-rounded !text-[16px]">refresh</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto w-full min-w-0 max-w-[1600px] px-4 pb-12 sm:px-6 lg:px-8">
+    <nav aria-label="Broadcast filters" class="sticky top-0 z-30 -mx-4 min-w-0 border-b border-slate-800/70 bg-slate-950/90 px-4 py-4 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+      <div id="filter-bar" class="scrollbar-none mx-auto flex w-full min-w-0 max-w-[1536px] gap-3 overflow-x-auto">
+        <button data-filter="all" aria-pressed="true" class="filter-button flex min-w-[210px] flex-1 items-center gap-3 rounded-2xl border border-slate-700/70 bg-slate-900/80 px-4 py-3 text-left transition hover:border-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-400/70">
+          <span class="filter-icon material-symbols-rounded text-slate-400">language</span>
+          <span><span class="block text-sm font-bold">All Matches</span><span id="all-count" class="mt-0.5 block text-[11px] uppercase tracking-wider text-slate-400">Loading</span></span>
+        </button>
+        <button data-filter="ctv" aria-pressed="false" class="filter-button flex min-w-[210px] flex-1 items-center gap-3 rounded-2xl border border-slate-700/70 bg-slate-900/80 px-4 py-3 text-left transition hover:border-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-400/70">
+          <span class="filter-icon material-symbols-rounded text-slate-400">live_tv</span>
+          <span><span class="block text-sm font-bold">Free TV (CTV)</span><span id="ctv-count" class="mt-0.5 block text-[11px] uppercase tracking-wider text-slate-400">Loading</span></span>
+        </button>
+        <button data-filter="tsn" aria-pressed="false" class="filter-button flex min-w-[210px] flex-1 items-center gap-3 rounded-2xl border border-slate-700/70 bg-slate-900/80 px-4 py-3 text-left transition hover:border-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-400/70">
+          <span class="filter-icon material-symbols-rounded text-slate-400">workspace_premium</span>
+          <span><span class="block text-sm font-bold">Paid TV (TSN)</span><span id="tsn-count" class="mt-0.5 block text-[11px] uppercase tracking-wider text-slate-400">Loading</span></span>
+        </button>
+      </div>
+    </nav>
+
+    <section id="notice" class="mt-6 hidden w-full min-w-0 break-words rounded-2xl border px-4 py-3 text-sm" role="status"></section>
+
+    <div class="mt-6 grid min-w-0 gap-5 xl:grid-cols-2">
+      <section class="panel min-w-0 overflow-hidden rounded-2xl shadow-panel">
+        <div class="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-700/60 px-5 py-4">
+          <h2 class="text-sm font-extrabold uppercase tracking-[.13em] text-white sm:text-base">Today's Games</h2>
+          <p id="today-label" class="w-full text-[11px] font-semibold uppercase tracking-[.12em] text-slate-400 sm:w-auto"></p>
+        </div>
+        <div class="hidden grid-cols-[95px_minmax(220px,1fr)_110px_125px] gap-3 border-b border-slate-700/50 bg-slate-950/30 px-5 py-2 text-[9px] font-bold uppercase tracking-[.15em] text-slate-500 md:grid">
+          <span>Status</span><span>Match</span><span>Kickoff (ET)</span><span>Broadcast</span>
+        </div>
+        <div id="today-games"></div>
+      </section>
+
+      <section class="panel min-w-0 overflow-hidden rounded-2xl shadow-panel">
+        <div class="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-700/60 px-5 py-4">
+          <h2 class="text-sm font-extrabold uppercase tracking-[.13em] text-white sm:text-base">Tomorrow's Games</h2>
+          <p id="tomorrow-label" class="w-full text-[11px] font-semibold uppercase tracking-[.12em] text-slate-400 sm:w-auto"></p>
+        </div>
+        <div class="hidden grid-cols-[95px_minmax(220px,1fr)_110px_125px] gap-3 border-b border-slate-700/50 bg-slate-950/30 px-5 py-2 text-[9px] font-bold uppercase tracking-[.15em] text-slate-500 md:grid">
+          <span>Status</span><span>Match</span><span>Kickoff (ET)</span><span>Broadcast</span>
+        </div>
+        <div id="tomorrow-games"></div>
+      </section>
+    </div>
+
+    <section class="panel mt-5 min-w-0 overflow-hidden rounded-2xl shadow-panel">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700/60 px-5 py-4">
+        <div class="flex items-center gap-3">
+          <h2 class="text-sm font-extrabold uppercase tracking-[.13em] text-white sm:text-base">Live Group Standings</h2>
+          <span class="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[.14em] text-emerald-400">
+            <span class="pulse-dot h-1.5 w-1.5 rounded-full bg-emerald-400"></span>Live
+          </span>
+        </div>
+        <p id="last-updated" class="text-[11px] text-slate-500">Waiting for feed</p>
+      </div>
+      <div id="standings" class="grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6"></div>
+      <div class="flex flex-wrap justify-between gap-3 border-t border-slate-700/50 px-5 py-3 text-[10px] text-slate-500">
+        <p>P = Played &nbsp;&nbsp; GD = Goal Difference &nbsp;&nbsp; PTS = Points</p>
+        <p>Automatically refreshes every 5 minutes</p>
+      </div>
+    </section>
+  </main>
+
+  <template id="empty-template">
+    <div class="grid min-h-48 place-items-center px-5 py-9 text-center">
+      <div>
+        <span class="material-symbols-rounded !text-[32px] text-slate-600">event_busy</span>
+        <p class="mt-3 text-sm font-bold text-slate-300">No matches scheduled</p>
+        <p class="mt-1 text-xs text-slate-500">There are no games matching this broadcast filter.</p>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    const API = {
+      matches: "/api/matches",
+      standings: "/api/standings"
+    };
+    const EASTERN_TIME_ZONE = "America/Toronto";
+    const state = { matches: [], standings: [], filter: "all", loading: false };
+
+    const $ = (selector) => document.querySelector(selector);
+    const escapeHtml = (value = "") => String(value).replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]);
+    const first = (...values) => values.find(value => value !== undefined && value !== null && value !== "");
+    const number = (...values) => Number(first(...values, 0)) || 0;
+
+    function easternDateKey(date) {
+      return new Intl.DateTimeFormat("en-CA", {
+        timeZone: EASTERN_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit"
+      }).format(date);
+    }
+
+    function dayKeyOffset(offset) {
+      const easternNow = new Date(new Date().toLocaleString("en-US", { timeZone: EASTERN_TIME_ZONE }));
+      easternNow.setDate(easternNow.getDate() + offset);
+      return `${easternNow.getFullYear()}-${String(easternNow.getMonth() + 1).padStart(2, "0")}-${String(easternNow.getDate()).padStart(2, "0")}`;
+    }
+
+    function dayLabel(offset) {
+      const easternNow = new Date(new Date().toLocaleString("en-US", { timeZone: EASTERN_TIME_ZONE }));
+      easternNow.setDate(easternNow.getDate() + offset);
+      return new Intl.DateTimeFormat("en-US", {
+        weekday: "long", month: "long", day: "numeric", year: "numeric"
+      }).format(easternNow);
+    }
+
+    function normalizeTeam(raw, fallback = "TBD") {
+      if (typeof raw === "string") return { name: raw, code: "", flag: "" };
+      const name = first(raw?.name, raw?.teamName, raw?.country, raw?.team_name, raw?.team, fallback);
+      return {
+        name,
+        code: first(raw?.code, raw?.shortName, raw?.fifa_code, raw?.country_code, raw?.iso2, raw?.country, ""),
+        flag: first(raw?.flag, raw?.flag_url, raw?.teamIconUrl, raw?.image, "")
+      };
+    }
+
+    function normalizeMatch(raw, index) {
+      const homeRaw = first(raw.home_team, raw.homeTeam, raw.home, raw.team1, {});
+      const awayRaw = first(raw.away_team, raw.awayTeam, raw.away, raw.team2, {});
+      const dateValue = first(raw.datetime, raw.matchDateTimeUTC, raw.date, raw.kickoff, raw.start_time, raw.utcDate, raw.match_date);
+      const date = new Date(dateValue);
+      if (Number.isNaN(date.getTime())) return null;
+      const home = normalizeTeam(homeRaw);
+      const away = normalizeTeam(awayRaw);
+      const rawStatus = String(first(raw.status, raw.state, raw.match_status, raw.time, "")).toLowerCase();
+      const finished = raw.matchIsFinished === true || rawStatus.includes("finish") || rawStatus.includes("complete") || rawStatus === "ft";
+      const live = !finished && date <= new Date() || rawStatus.includes("live") || rawStatus.includes("progress") || rawStatus.includes("half");
+      const status = finished ? "finished" : live ? "live" : "upcoming";
+      const weekday = new Intl.DateTimeFormat("en-US", { timeZone: EASTERN_TIME_ZONE, weekday: "short" }).format(date);
+      const isFree = weekday === "Sat" || weekday === "Sun" ||
+        [home.name, away.name].some(name => /canada|kanada/i.test(String(name))) ||
+        [home.code, away.code].some(code => String(code).toUpperCase() === "CAN");
+      const results = first(raw.matchResults, raw.results, []);
+      const finalResult = Array.isArray(results) ? [...results].sort((a, b) => number(b.resultOrderID, b.order) - number(a.resultOrderID, a.order))[0] : {};
+      return {
+        id: first(raw.id, raw.matchID, raw.match_number, `${date.toISOString()}-${index}`),
+        date, home, away, status, isFree,
+        homeScore: first(homeRaw?.goals, raw.home_score, raw.homeScore, finalResult?.pointsTeam1, ""),
+        awayScore: first(awayRaw?.goals, raw.away_score, raw.awayScore, finalResult?.pointsTeam2, ""),
+        detail: first(raw.stage_name, raw.stage, raw.group?.groupName, raw.group, raw.venue, raw.leagueName, "")
+      };
+    }
+
+    function normalizeStanding(raw) {
+      const team = normalizeTeam(first(raw.team, raw, {}));
+      return {
+        team,
+        group: String(first(raw.group_letter, raw.group, raw.group_name, raw.pool, "Overall")).replace(/^Group\s*/i, "").toUpperCase(),
+        played: number(raw.games_played, raw.played, raw.matches_played, raw.matches, raw.mp),
+        gd: number(raw.goal_differential, raw.goal_difference, raw.goalDifference, raw.goalDiff, raw.gd),
+        points: number(raw.points, raw.group_points, raw.pts)
+      };
+    }
+
+    function extractArray(payload, keys) {
+      if (Array.isArray(payload)) return payload;
+      for (const key of keys) if (Array.isArray(payload?.[key])) return payload[key];
+      return [];
+    }
+
+    function flattenStandings(payload) {
+      const direct = extractArray(payload, ["teams", "standings", "data", "groups"]);
+      return direct.flatMap(item => {
+        const rows = extractArray(item, ["teams", "standings", "table"]);
+        if (!rows.length) return item;
+        return rows.map(row => ({ ...row, group: first(row.group, item.group, item.name, item.group_letter, item.letter) }));
+      });
+    }
+
+    async function fetchJson(url) {
+      const cacheKey = `world-cup-dashboard:${url.includes("matches") ? "matches" : "standings"}`;
+      const response = await fetch(`${url}?refresh=${Date.now()}`, { headers: { Accept: "application/json" }, cache: "no-store" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || `${response.status} ${response.statusText}`);
+      localStorage.setItem(cacheKey, JSON.stringify(payload.data));
+      return payload.data;
+    }
+
+    function deriveGroupStandings(matches) {
+      const groupStage = matches.filter(match => /^[123]\.\s*Runde$/i.test(String(match.detail)));
+      const graph = new Map();
+      const teamInfo = new Map();
+      groupStage.forEach(match => {
+        const homeId = match.home.code || match.home.name;
+        const awayId = match.away.code || match.away.name;
+        teamInfo.set(homeId, match.home);
+        teamInfo.set(awayId, match.away);
+        if (!graph.has(homeId)) graph.set(homeId, new Set());
+        if (!graph.has(awayId)) graph.set(awayId, new Set());
+        graph.get(homeId).add(awayId);
+        graph.get(awayId).add(homeId);
+      });
+      const visited = new Set();
+      const groups = [];
+      graph.forEach((_, start) => {
+        if (visited.has(start)) return;
+        const stack = [start], members = [];
+        while (stack.length) {
+          const current = stack.pop();
+          if (visited.has(current)) continue;
+          visited.add(current);
+          members.push(current);
+          graph.get(current)?.forEach(next => stack.push(next));
+        }
+        if (members.length === 4) groups.push(members);
+      });
+      const firstKickoff = members => Math.min(...groupStage
+        .filter(match => members.includes(match.home.code || match.home.name) && members.includes(match.away.code || match.away.name))
+        .map(match => match.date.getTime()));
+      return groups.sort((a, b) => firstKickoff(a) - firstKickoff(b)).flatMap((members, index) => {
+        const group = String.fromCharCode(65 + index);
+        const rows = new Map(members.map(id => [id, { team: teamInfo.get(id), group, played: 0, gd: 0, points: 0 }]));
+        groupStage.filter(match => match.status === "finished" &&
+          members.includes(match.home.code || match.home.name) &&
+          members.includes(match.away.code || match.away.name)
+        ).forEach(match => {
+          const home = rows.get(match.home.code || match.home.name);
+          const away = rows.get(match.away.code || match.away.name);
+          const homeScore = Number(match.homeScore), awayScore = Number(match.awayScore);
+          if (!Number.isFinite(homeScore) || !Number.isFinite(awayScore)) return;
+          home.played++; away.played++;
+          home.gd += homeScore - awayScore;
+          away.gd += awayScore - homeScore;
+          if (homeScore > awayScore) home.points += 3;
+          else if (awayScore > homeScore) away.points += 3;
+          else { home.points++; away.points++; }
+        });
+        return [...rows.values()];
+      });
+    }
+
+    async function loadData() {
+      if (state.loading) return;
+      state.loading = true;
+      setRefreshState(true);
+      showNotice("loading", "Connecting to the live World Cup data feed...");
+      try {
+        const [matchesResult, standingsResult] = await Promise.allSettled([fetchJson(API.matches), fetchJson(API.standings)]);
+        if (matchesResult.status === "fulfilled") {
+          state.matches = extractArray(matchesResult.value, ["matches", "data", "fixtures"]).map(normalizeMatch).filter(Boolean);
+        }
+        if (standingsResult.status === "fulfilled") {
+          state.standings = flattenStandings(standingsResult.value).map(normalizeStanding).filter(row => row.team.name);
+        }
+        const groupStandings = deriveGroupStandings(state.matches);
+        if (groupStandings.length) state.standings = groupStandings;
+        if (matchesResult.status === "rejected" && standingsResult.status === "rejected") throw new Error("The public data feed is currently unavailable.");
+        const oldFeed = state.matches.length && !state.matches.some(match => match.date.getFullYear() === new Date().getFullYear());
+        if (oldFeed) showNotice("warning", "The public feed is responding, but it has not published current-tournament fixtures yet. This dashboard will populate automatically when the feed updates.");
+        else $("#notice").classList.add("hidden");
+        $("#last-updated").textContent = `Updated ${new Intl.DateTimeFormat("en-US", { timeZone: EASTERN_TIME_ZONE, hour: "numeric", minute: "2-digit", second: "2-digit" }).format(new Date())} ET`;
+      } catch (error) {
+        showNotice("error", `${error.message} Check your connection, then refresh the feed.`);
+      } finally {
+        state.loading = false;
+        setRefreshState(false);
+        render();
+      }
+    }
+
+    function showNotice(type, message) {
+      const styles = {
+        loading: "border-slate-700 bg-slate-900/70 text-slate-300",
+        success: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
+        warning: "border-amber-500/30 bg-amber-500/10 text-amber-200",
+        error: "border-rose-500/30 bg-rose-500/10 text-rose-200"
+      };
+      $("#notice").className = `mt-6 rounded-2xl border px-4 py-3 text-sm ${styles[type]}`;
+      $("#notice").textContent = message;
+    }
+
+    function setRefreshState(loading) {
+      $("#refresh-button").disabled = loading;
+      $("#refresh-label").textContent = loading ? "Refreshing" : "Refresh feed";
+      $("#refresh-button .material-symbols-rounded").classList.toggle("animate-spin", loading);
+    }
+
+    function flagMarkup(team) {
+      const source = team.flag || `https://countryflagsapi.netlify.app/flag/${encodeURIComponent(team.name)}.svg`;
+      const initials = String(team.code || team.name).slice(0, 2).toUpperCase();
+      return `<span class="relative grid h-5 w-7 shrink-0 place-items-center overflow-hidden rounded-sm bg-slate-700 text-[8px] font-extrabold text-slate-300">
+        ${escapeHtml(initials)}
+        <img src="${escapeHtml(source)}" alt="" class="absolute inset-0 h-full w-full object-cover" loading="lazy" onerror="this.remove()">
+      </span>`;
+    }
+
+    function formatTime(date) {
+      return new Intl.DateTimeFormat("en-US", {
+        timeZone: EASTERN_TIME_ZONE, hour: "numeric", minute: "2-digit"
+      }).format(date);
+    }
+
+    function statusMarkup(match) {
+      if (match.status === "live") return `<div><p class="font-extrabold uppercase text-emerald-400">Live</p><p class="mt-1 text-[10px] text-emerald-300/70">In progress</p></div>`;
+      if (match.status === "finished") return `<div><p class="font-bold uppercase text-slate-300">Finished</p><p class="mt-1 text-[10px] text-slate-500">Full time</p></div>`;
+      return `<div><p class="font-bold uppercase text-slate-300">Upcoming</p><p class="mt-1 text-[10px] text-slate-500">Scheduled</p></div>`;
+    }
+
+    function broadcastMarkup(isFree) {
+      return isFree
+        ? `<span class="inline-flex items-center gap-1 rounded-md border border-emerald-400/30 bg-emerald-400/10 px-2 py-1 text-[10px] font-bold text-emerald-300"><span class="material-symbols-rounded !text-[13px]">live_tv</span>Free on CTV</span>`
+        : `<span class="inline-flex items-center gap-1 rounded-md border border-blue-400/30 bg-blue-400/10 px-2 py-1 text-[10px] font-bold text-blue-300"><span class="material-symbols-rounded !text-[13px]">workspace_premium</span>TSN Premium</span>`;
+    }
+
+    function matchMarkup(match) {
+      const scoreVisible = match.status !== "upcoming";
+      const teamRow = (team, score) => `<div class="flex min-w-0 items-center gap-2">${flagMarkup(team)}<span class="truncate font-semibold text-white">${escapeHtml(team.name)}</span>${scoreVisible ? `<span class="ml-auto pl-2 font-extrabold tabular-nums text-white">${escapeHtml(score)}</span>` : ""}</div>`;
+      return `<article data-broadcast="${match.isFree ? "ctv" : "tsn"}" class="match-row ${match.status === "live" ? "live-row" : ""} grid gap-4 border-b border-slate-700/50 px-5 py-4 text-xs md:grid-cols-[95px_minmax(220px,1fr)_110px_125px] md:items-center">
+        <div class="flex items-center justify-between md:block">${statusMarkup(match)}<span class="text-[10px] uppercase tracking-wider text-slate-500 md:hidden">${escapeHtml(formatTime(match.date))} ET</span></div>
+        <div class="min-w-0 space-y-2">${teamRow(match.home, match.homeScore)}${teamRow(match.away, match.awayScore)}${match.detail ? `<p class="truncate pt-1 text-[10px] uppercase tracking-wider text-slate-500">${escapeHtml(match.detail)}</p>` : ""}</div>
+        <p class="hidden font-bold tabular-nums text-white md:block">${escapeHtml(formatTime(match.date))}</p>
+        <div>${broadcastMarkup(match.isFree)}</div>
+      </article>`;
+    }
+
+    function filtered(matches) {
+      return state.filter === "all" ? matches : matches.filter(match => (match.isFree ? "ctv" : "tsn") === state.filter);
+    }
+
+    function renderGames(selector, matches) {
+      const target = $(selector);
+      const visible = filtered(matches).sort((a, b) => a.date - b.date);
+      if (!visible.length) {
+        target.replaceChildren($("#empty-template").content.cloneNode(true));
+        return;
+      }
+      target.innerHTML = visible.map(matchMarkup).join("");
+    }
+
+    function standingCard(group, rows) {
+      const sorted = [...rows].sort((a, b) => b.points - a.points || b.gd - a.gd || a.team.name.localeCompare(b.team.name));
+      const groupLabel = group === "OVERALL" ? "Overall live table" : `Group ${escapeHtml(group)}`;
+      return `<article class="${group === "OVERALL" ? "sm:col-span-2 lg:col-span-3 2xl:col-span-6" : ""} overflow-hidden rounded-xl border border-slate-700/60 bg-slate-950/25">
+        <div class="grid grid-cols-[1fr_28px_34px_32px] gap-1 border-b border-slate-700/60 px-3 py-2 text-[9px] font-bold uppercase tracking-wider text-slate-500">
+          <span class="text-slate-300">${groupLabel}</span><span>P</span><span>GD</span><span>PTS</span>
+        </div>
+        <div>${sorted.map((row, index) => `<div class="grid grid-cols-[1fr_28px_34px_32px] gap-1 border-b border-slate-800/70 px-3 py-2 text-[10px] last:border-0">
+          <div class="flex min-w-0 items-center gap-1.5"><span class="w-3 text-slate-600">${index + 1}</span>${flagMarkup(row.team)}<span class="truncate font-semibold text-slate-200">${escapeHtml(row.team.name)}</span></div>
+          <span class="tabular-nums text-slate-400">${row.played}</span><span class="tabular-nums text-slate-400">${row.gd > 0 ? "+" : ""}${row.gd}</span><span class="font-extrabold tabular-nums text-white">${row.points}</span>
+        </div>`).join("")}</div>
+      </article>`;
+    }
+
+    function renderStandings() {
+      const grouped = Object.groupBy ? Object.groupBy(state.standings, row => row.group) : state.standings.reduce((acc, row) => ((acc[row.group] ||= []).push(row), acc), {});
+      const groups = Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }));
+      $("#standings").innerHTML = groups.length ? groups.map(([group, rows]) => standingCard(group, rows)).join("") : `<div class="col-span-full grid min-h-48 place-items-center text-center"><div><span class="material-symbols-rounded !text-[32px] text-slate-600">table_rows</span><p class="mt-3 text-sm font-bold text-slate-300">Standings not available yet</p><p class="mt-1 text-xs text-slate-500">Group tables will appear automatically when the feed publishes them.</p></div></div>`;
+    }
+
+    function render() {
+      const today = state.matches.filter(match => easternDateKey(match.date) === dayKeyOffset(0));
+      const tomorrow = state.matches.filter(match => easternDateKey(match.date) === dayKeyOffset(1));
+      renderGames("#today-games", today);
+      renderGames("#tomorrow-games", tomorrow);
+      renderStandings();
+      const relevant = [...today, ...tomorrow];
+      $("#all-count").textContent = `${relevant.length} matches`;
+      $("#ctv-count").textContent = `${relevant.filter(match => match.isFree).length} matches`;
+      $("#tsn-count").textContent = `${relevant.filter(match => !match.isFree).length} matches`;
+    }
+
+    function updateClock() {
+      $("#clock").textContent = `${new Intl.DateTimeFormat("en-US", {
+        timeZone: EASTERN_TIME_ZONE, hour: "numeric", minute: "2-digit", second: "2-digit"
+      }).format(new Date())} ET`;
+    }
+
+    $("#today-label").textContent = dayLabel(0);
+    $("#tomorrow-label").textContent = dayLabel(1);
+    $("#filter-bar").addEventListener("click", event => {
+      const button = event.target.closest("[data-filter]");
+      if (!button) return;
+      state.filter = button.dataset.filter;
+      document.querySelectorAll("[data-filter]").forEach(item => item.setAttribute("aria-pressed", String(item === button)));
+      render();
+    });
+    $("#refresh-button").addEventListener("click", loadData);
+    updateClock();
+    setInterval(updateClock, 1000);
+    setInterval(loadData, 300000);
+    loadData();
+  </script>
+</body>
+</html>
