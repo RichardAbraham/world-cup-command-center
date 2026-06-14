@@ -2,8 +2,8 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
-const PORT = 4173;
-const HOST = "127.0.0.1";
+const PORT = process.env.PORT || 4173;
+const HOST = "0.0.0.0";
 const SOURCES = {
   matches: "https://api.openligadb.de/getmatchdata/wm2026/2026",
   standings: "https://api.openligadb.de/getbltable/wm2026/2026"
@@ -53,4 +53,4 @@ http.createServer(async (request, response) => {
   }
   if (url.pathname === "/" || url.pathname === "/index.html") return file(response, "index.html", "text/html; charset=utf-8");
   return json(response, 404, { error: "Not found" });
-}).listen(PORT, HOST, () => console.log(`Broadcast Command Center running at http://${HOST}:${PORT}`));
+}).listen(PORT, HOST, () => console.log(`Broadcast Command Center running on port ${PORT}`));
