@@ -156,6 +156,20 @@
     };
     const EASTERN_TIME_ZONE = "America/Toronto";
     const state = { matches: [], standings: [], filter: "all", loading: false };
+    const ENGLISH_TEAM_NAMES = {
+      ALG: "Algeria", ARG: "Argentina", AUS: "Australia", AUT: "Austria",
+      BEL: "Belgium", BHG: "Bosnia and Herzegovina", BIH: "Bosnia and Herzegovina", BRA: "Brazil", CAN: "Canada",
+      CIV: "Ivory Coast", COD: "DR Congo", COL: "Colombia", CPV: "Cape Verde",
+      CRO: "Croatia", CZE: "Czechia", ECU: "Ecuador", EGY: "Egypt",
+      ESP: "Spain", FRA: "France", GER: "Germany", GHA: "Ghana",
+      HAI: "Haiti", IRQ: "Iraq", IRN: "Iran", JOR: "Jordan",
+      JPN: "Japan", KOR: "South Korea", MAR: "Morocco", MEX: "Mexico",
+      NED: "Netherlands", NLD: "Netherlands", NOR: "Norway", NZL: "New Zealand", PAN: "Panama",
+      PAR: "Paraguay", POR: "Portugal", QAT: "Qatar", KSA: "Saudi Arabia",
+      KAT: "Qatar", SAR: "Saudi Arabia", SCO: "Scotland", SEN: "Senegal", RSA: "South Africa", SUI: "Switzerland",
+      SWE: "Sweden", TUN: "Tunisia", TUR: "Türkiye", UAE: "United Arab Emirates",
+      URU: "Uruguay", USA: "USA", UZB: "Uzbekistan"
+    };
 
     const $ = (selector) => document.querySelector(selector);
     const escapeHtml = (value = "") => String(value).replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]);
@@ -184,10 +198,11 @@
 
     function normalizeTeam(raw, fallback = "TBD") {
       if (typeof raw === "string") return { name: raw, code: "", flag: "" };
-      const name = first(raw?.name, raw?.teamName, raw?.country, raw?.team_name, raw?.team, fallback);
+      const code = first(raw?.code, raw?.shortName, raw?.fifa_code, raw?.country_code, raw?.iso2, raw?.country, "");
+      const sourceName = first(raw?.name, raw?.teamName, raw?.country, raw?.team_name, raw?.team, fallback);
       return {
-        name,
-        code: first(raw?.code, raw?.shortName, raw?.fifa_code, raw?.country_code, raw?.iso2, raw?.country, ""),
+        name: ENGLISH_TEAM_NAMES[String(code).toUpperCase()] || sourceName,
+        code,
         flag: first(raw?.flag, raw?.flag_url, raw?.teamIconUrl, raw?.image, "")
       };
     }
