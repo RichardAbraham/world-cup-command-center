@@ -338,6 +338,18 @@
       });
     }
 
+    function addGroupLabels(matches, standings) {
+      const groupByTeam = new Map();
+      standings.forEach(row => groupByTeam.set(row.team.code || row.team.name, row.group));
+      matches.forEach(match => {
+        const matchday = String(match.detail).match(/^Group Stage · Matchday ([123])$/i);
+        if (!matchday) return;
+        const homeGroup = groupByTeam.get(match.home.code || match.home.name);
+        const awayGroup = groupByTeam.get(match.away.code || match.away.name);
+        if (homeGroup && homeGroup === awayGroup) match.detail = `Group ${homeGroup} · Matchday ${matchday[1]}`;
+      });
+    }
+
     async function loadData() {
       if (state.loading) return;
       state.loading = true;
@@ -352,7 +364,10 @@
           state.standings = flattenStandings(standingsResult.value).map(normalizeStanding).filter(row => row.team.name);
         }
         const groupStandings = deriveGroupStandings(state.matches);
-        if (groupStandings.length) state.standings = groupStandings;
+        if (groupStandings.length) {
+          state.standings = groupStandings;
+          addGroupLabels(state.matches, groupStandings);
+        }
         if (matchesResult.status === "rejected" && standingsResult.status === "rejected") throw new Error("The public data feed is currently unavailable.");
         const oldFeed = state.matches.length && !state.matches.some(match => match.date.getFullYear() === new Date().getFullYear());
         if (oldFeed) showNotice("warning", "The public feed is responding, but it has not published current-tournament fixtures yet. This dashboard will populate automatically when the feed updates.");
