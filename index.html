@@ -207,6 +207,22 @@
       };
     }
 
+    function translateStage(value) {
+      const stage = String(value || "");
+      const translations = {
+        "1. Runde": "Group Stage · Matchday 1",
+        "2. Runde": "Group Stage · Matchday 2",
+        "3. Runde": "Group Stage · Matchday 3",
+        "Sechzehntelfinale": "Round of 32",
+        "Achtelfinale": "Round of 16",
+        "Viertelfinale": "Quarterfinal",
+        "Halbfinale": "Semifinal",
+        "Spiel um Platz 3": "Third-Place Match",
+        "Finale": "Final"
+      };
+      return translations[stage] || stage;
+    }
+
     function normalizeMatch(raw, index) {
       const homeRaw = first(raw.home_team, raw.homeTeam, raw.home, raw.team1, {});
       const awayRaw = first(raw.away_team, raw.awayTeam, raw.away, raw.team2, {});
@@ -230,7 +246,7 @@
         date, home, away, status, isFree,
         homeScore: first(homeRaw?.goals, raw.home_score, raw.homeScore, finalResult?.pointsTeam1, ""),
         awayScore: first(awayRaw?.goals, raw.away_score, raw.awayScore, finalResult?.pointsTeam2, ""),
-        detail: first(raw.stage_name, raw.stage, raw.group?.groupName, raw.group, raw.venue, raw.leagueName, "")
+        detail: translateStage(first(raw.stage_name, raw.stage, raw.group?.groupName, raw.group, raw.venue, raw.leagueName, ""))
       };
     }
 
@@ -270,7 +286,7 @@
     }
 
     function deriveGroupStandings(matches) {
-      const groupStage = matches.filter(match => /^[123]\.\s*Runde$/i.test(String(match.detail)));
+      const groupStage = matches.filter(match => /^Group Stage · Matchday [123]$/i.test(String(match.detail)));
       const graph = new Map();
       const teamInfo = new Map();
       groupStage.forEach(match => {
